@@ -1,0 +1,295 @@
+/* ============================================
+   CalmSpace — Global Styles
+   ============================================ */
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ---- Reset & Base ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  background: #0a0814;
+  color: #f1f5f9;
+  user-select: none;
+  touch-action: none;
+}
+
+/* ---- Glassmorphism ---- */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(60px) saturate(220%);
+  -webkit-backdrop-filter: blur(60px) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* ---- Ambient Background ---- */
+.ambient-bg {
+  background-size: 400% 400%;
+  animation: drift 20s ease-in-out infinite;
+}
+
+/* ---- State-specific Backgrounds ---- */
+.state-high {
+  background: radial-gradient(circle at 30% 20%, #1a0050 0%, #0a0814 60%),
+    radial-gradient(circle at 80% 80%, #200060 0%, transparent 60%);
+}
+
+.state-moderate {
+  background: radial-gradient(circle at 30% 20%, #002a3a 0%, #0a0814 60%),
+    radial-gradient(circle at 80% 80%, #003050 0%, transparent 60%);
+}
+
+.state-mild {
+  background: radial-gradient(circle at 30% 20%, #001e2a 0%, #0a0814 60%),
+    radial-gradient(circle at 70% 70%, #001a10 0%, transparent 60%);
+}
+
+.state-calm {
+  background: radial-gradient(circle at 30% 20%, #1a0040 0%, #0a0814 60%),
+    radial-gradient(circle at 80% 80%, #000820 0%, transparent 60%);
+}
+
+/* ---- Orb Breathing ---- */
+.breathing-orb {
+  border-radius: 50%;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ---- Touch Trail Effect ---- */
+.touch-trail {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 9999;
+  animation: trailFade 0.7s ease-out forwards;
+}
+
+@keyframes trailFade {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* ---- Particle Canvas ---- */
+#particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ---- Status Ring ---- */
+.emotion-ring {
+  border-radius: 50%;
+  transition: border-color 1.5s ease, box-shadow 1.5s ease;
+}
+
+/* ---- Floating Mood Icons ---- */
+.mood-icon {
+  animation: floatY 5s ease-in-out infinite;
+  display: inline-flex;
+}
+
+@keyframes floatY {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-18px);
+  }
+}
+
+/* ---- Ripple Effect ---- */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.3);
+  animation: rippleOut 1s cubic-bezier(0, 0.55, 0.45, 1) forwards;
+}
+
+@keyframes rippleOut {
+  from {
+    transform: scale(0.3);
+    opacity: 0.8;
+  }
+
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ---- Utility ---- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* State transition */
+.app-container {
+  transition: background 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(10, 8, 20, 0.85);
+  backdrop-filter: blur(20px);
+}
+
+/* ---- Custom Animations ---- */
+@keyframes orbPulseHigh {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px 10px rgba(99, 102, 241, 0.5);
+  }
+
+  50% {
+    transform: scale(1.18);
+    box-shadow: 0 0 80px 20px rgba(99, 102, 241, 0.9);
+  }
+}
+
+@keyframes orbPulseModerate {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px 10px rgba(56, 189, 248, 0.5);
+  }
+
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 70px 16px rgba(56, 189, 248, 0.85);
+  }
+}
+
+@keyframes orbPulseMild {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px 8px rgba(52, 211, 153, 0.4);
+  }
+
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 60px 12px rgba(52, 211, 153, 0.7);
+  }
+}
+
+@keyframes orbPulseCalm {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px 8px rgba(167, 139, 250, 0.4);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 50px 10px rgba(167, 139, 250, 0.65);
+  }
+}
+
+.orb-high {
+  animation: orbPulseHigh 2s ease-in-out infinite;
+}
+
+.orb-moderate {
+  animation: orbPulseModerate 3s ease-in-out infinite;
+}
+
+.orb-mild {
+  animation: orbPulseMild 4s ease-in-out infinite;
+}
+
+.orb-calm {
+  animation: orbPulseCalm 5s ease-in-out infinite;
+}
+
+/* Drift keyframes */
+@keyframes drift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Wave ring rotation */
+@keyframes waveRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wave-ring {
+  animation: waveRotate 20s linear infinite;
+}
+
+/* Gentle vibration simulated via CSS for haptic feel */
+@keyframes microPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.03);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.breathe-prompt {
+  animation: microPulse 1s ease-in-out 3;
+}
