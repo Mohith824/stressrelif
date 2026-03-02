@@ -1,9 +1,8 @@
 /**
- * App.jsx — CalmSpace (FULLY WIRED)
- * - Pointer velocity drives stress score in simulation mode
- * - Click bursts raise stress score
- * - BreathingOverlay fires when stress is high/moderate
- * - Sound plays automatically on start
+ * App.jsx — CalmSpace (FULLY WIRED v2)
+ * - Camera stress → CalmDownBanner + auto soothing music
+ * - Pointer velocity + hover duration drive simulation score
+ * - BreathingOverlay fires on high/moderate stress
  * - Orb click triggers guided breathing
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -15,6 +14,7 @@ import BreathingOrb from './components/BreathingOrb';
 import PrivacyModal from './components/PrivacyModal';
 import StatusPanel from './components/StatusPanel';
 import BreathingOverlay from './components/BreathingOverlay';
+import CalmDownBanner from './components/CalmDownBanner';
 
 const BG = {
   high: 'radial-gradient(circle at 25% 25%, #1a0050 0%, #0a0814 55%), radial-gradient(circle at 75% 75%, #200060 0%, transparent 55%)',
@@ -50,6 +50,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
   const [prevStressState, setPrevStressState] = useState('calm');
+  // Banner: show only when camera is on and stress is high/moderate
+  const [bannerVisible, setBannerVisible] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -67,22 +69,29 @@ export default function App() {
 
   const { play, stopAll } = useCalmSound();
 
-  // ── Auto sound based on state ──
+  // ── Auto sound — always on when started ──
   useEffect(() => {
     if (!started) return;
     if (soundOn) play(stressState);
     else stopAll();
   }, [stressState, soundOn, started, play, stopAll]);
 
-  // ── Show breathing overlay when stress jumps HIGH or MODERATE ──
+  // ── Camera stress response: banner + auto music ──
+  useEffect(() => {
+    if (!started || !cameraEnabled) { setBannerVisible(false); return; }
+    const stressed = stressState === 'high' || stressState === 'moderate';
+    setBannerVisible(stressed);
+    // Ensure sound is on whenever camera detects stress
+    if (stressed && !soundOn) setSoundOn(true);
+  }, [stressState, cameraEnabled, started, soundOn]);
+
+  // ── Show breathing overlay on stress state escalation ──
   useEffect(() => {
     if (!started) return;
-    if (
+    const escalated =
       (stressState === 'high' && prevStressState !== 'high') ||
-      (stressState === 'moderate' && prevStressState === 'calm')
-    ) {
-      setShowBreathing(true);
-    }
+      (stressState === 'moderate' && prevStressState === 'calm');
+    if (escalated) setShowBreathing(true);
     setPrevStressState(stressState);
   }, [stressState, prevStressState, started]);
 
@@ -147,11 +156,7 @@ export default function App() {
   const onPointerDown = useCallback((e) => {
     const { clientX: x, clientY: y } = e.touches?.[0] ?? e;
     gestureStart.current = { x, y, t: Date.now() };
-
-    // Feed click burst into emotion engine
     feedClick();
-
-    // Color ripple by stress: stressed=red-tinted, calm=cyan
     const color = stressScore > 60
       ? 'rgba(139,92,246,0.35)'
       : stressScore > 35
@@ -160,11 +165,9 @@ export default function App() {
     addRipple(x, y, color);
     setPointer({ x, y });
     calcVelocity(x, y);
-
     holdTimer.current = setTimeout(() => {
       setIsHeld(true);
       if (navigator.vibrate) navigator.vibrate(60);
-      // Big expand ripple on hold
       addRipple(x, y, 'rgba(167,139,250,0.3)');
     }, 500);
   }, [addRipple, feedClick, calcVelocity, stressScore]);
@@ -207,6 +210,13 @@ export default function App() {
       onTouchMove={onPointerMove}
       onTouchEnd={onPointerUp}
     >
+      {/* Calm-down banner — only when camera is on + stressed */}
+      <CalmDownBanner
+        stressState={stressState}
+        cameraEnabled={cameraEnabled}
+        visible={bannerVisible}
+      />
+
       {/* Particles */}
       <ParticleCanvas stressScore={stressScore} pointerPos={pointer} />
 
