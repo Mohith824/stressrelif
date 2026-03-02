@@ -1,7 +1,5 @@
 /**
- * StatusPanel.jsx
- * Shows the emotion state label, message, floating mood icons,
- * and the stress score bar — all animated with Framer Motion.
+ * StatusPanel.jsx — Inline Styles Version
  */
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,28 +10,32 @@ const MESSAGES = {
         sub: "Inhale slowly for 4 counts. Hold. Exhale for 6.",
         icons: ['💜', '🌊', '🕊️'],
         tag: 'High Stress',
-        tagColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30',
+        tagStyle: { background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' },
+        barGradient: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
     },
     moderate: {
         headline: "Touch the waves.",
         sub: "Slow your breath and let the rhythm guide you.",
         icons: ['🌬️', '💙', '🌀'],
         tag: 'Moderate',
-        tagColor: 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+        tagStyle: { background: 'rgba(56,189,248,0.15)', color: '#7dd3fc', border: '1px solid rgba(56,189,248,0.3)' },
+        barGradient: 'linear-gradient(90deg, #38bdf8, #0ea5e9)',
     },
     mild: {
         headline: "You're doing great.",
         sub: "Keep your calm flow going. The water is still.",
         icons: ['🌿', '🌱', '💚'],
         tag: 'Mild Stress',
-        tagColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+        tagStyle: { background: 'rgba(52,211,153,0.15)', color: '#6ee7b7', border: '1px solid rgba(52,211,153,0.3)' },
+        barGradient: 'linear-gradient(90deg, #34d399, #059669)',
     },
     calm: {
         headline: "You seem calm.",
         sub: "Enjoy your peace. You earned this moment.",
         icons: ['✨', '🌸', '🦋'],
         tag: 'Calm',
-        tagColor: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+        tagStyle: { background: 'rgba(167,139,250,0.15)', color: '#c4b5fd', border: '1px solid rgba(167,139,250,0.3)' },
+        barGradient: 'linear-gradient(90deg, #a78bfa, #7c3aed)',
     },
 };
 
@@ -54,7 +56,7 @@ export default function StatusPanel({ stressState = 'calm', stressScore = 15, to
         <AnimatePresence mode="wait">
             <motion.div
                 key={stressState}
-                className="flex flex-col items-center gap-4 text-center px-4 w-full"
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center', padding: '0 1rem', width: '100%' }}
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
@@ -62,14 +64,18 @@ export default function StatusPanel({ stressState = 'calm', stressScore = 15, to
             >
                 {/* State tag */}
                 <motion.div variants={itemVariants}>
-                    <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${info.tagColor}`}>
+                    <span style={{
+                        padding: '4px 16px', borderRadius: 9999, fontSize: '0.7rem',
+                        fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase',
+                        ...info.tagStyle,
+                    }}>
                         {info.tag}
                     </span>
                 </motion.div>
 
                 {/* Headline */}
                 <motion.h1
-                    className="text-white text-3xl font-bold tracking-tight leading-tight"
+                    style={{ color: 'white', fontSize: '1.875rem', fontWeight: 700, lineHeight: 1.25 }}
                     variants={itemVariants}
                 >
                     {info.headline}
@@ -77,19 +83,19 @@ export default function StatusPanel({ stressState = 'calm', stressScore = 15, to
 
                 {/* Subtext */}
                 <motion.p
-                    className="text-slate-400 text-sm max-w-xs leading-relaxed"
+                    style={{ color: '#94a3b8', fontSize: '0.875rem', maxWidth: 280, lineHeight: 1.7 }}
                     variants={itemVariants}
                 >
                     {info.sub}
                 </motion.p>
 
                 {/* Floating mood icons */}
-                <motion.div className="flex gap-4 mt-1" variants={itemVariants}>
+                <motion.div style={{ display: 'flex', gap: '1rem', marginTop: 4 }} variants={itemVariants}>
                     {info.icons.map((icon, i) => (
                         <div
                             key={icon}
-                            className="mood-icon text-2xl"
-                            style={{ animationDelay: `${i * 0.7}s`, animationDuration: `${4 + i * 0.8}s` }}
+                            className="mood-icon"
+                            style={{ animationDelay: `${i * 0.7}s`, animationDuration: `${4 + i * 0.8}s`, fontSize: '1.5rem' }}
                             role="img"
                             aria-label={icon}
                         >
@@ -99,24 +105,15 @@ export default function StatusPanel({ stressState = 'calm', stressScore = 15, to
                 </motion.div>
 
                 {/* Stress score bar */}
-                <motion.div className="w-full max-w-xs" variants={itemVariants}>
-                    <div className="flex justify-between text-xs text-slate-500 mb-2">
+                <motion.div style={{ width: '100%', maxWidth: 280 }} variants={itemVariants}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
                         <span>Calm</span>
-                        <span className="text-slate-400 font-semibold">Stress Index: {stressScore}</span>
+                        <span style={{ color: '#94a3b8', fontWeight: 600 }}>Index: {stressScore}</span>
                         <span>Tense</span>
                     </div>
-                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 9999, overflow: 'hidden' }}>
                         <motion.div
-                            className="h-full rounded-full"
-                            style={{
-                                background: stressScore > 79
-                                    ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
-                                    : stressScore > 49
-                                        ? 'linear-gradient(90deg, #38bdf8, #0ea5e9)'
-                                        : stressScore > 19
-                                            ? 'linear-gradient(90deg, #34d399, #059669)'
-                                            : 'linear-gradient(90deg, #a78bfa, #7c3aed)',
-                            }}
+                            style={{ height: '100%', borderRadius: 9999, background: info.barGradient }}
                             animate={{ width: `${stressScore}%` }}
                             transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
                         />
@@ -125,8 +122,8 @@ export default function StatusPanel({ stressState = 'calm', stressScore = 15, to
 
                 {/* Emotion detected */}
                 {topEmotion && topEmotion !== 'neutral' && (
-                    <motion.p className="text-slate-600 text-xs" variants={itemVariants}>
-                        Detected: <span className="text-slate-400 capitalize">{topEmotion}</span>
+                    <motion.p style={{ color: '#475569', fontSize: '0.75rem' }} variants={itemVariants}>
+                        Detected: <span style={{ color: '#94a3b8', textTransform: 'capitalize' }}>{topEmotion}</span>
                     </motion.p>
                 )}
             </motion.div>

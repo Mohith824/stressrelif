@@ -1,6 +1,5 @@
 /**
- * PrivacyModal.jsx
- * Consent dialog before camera activation.
+ * PrivacyModal.jsx — Inline Styles Version
  */
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,50 +8,75 @@ export default function PrivacyModal({ onAccept, onDecline }) {
     return (
         <AnimatePresence>
             <motion.div
-                className="fixed inset-0 modal-backdrop z-50 flex items-end sm:items-center justify-center p-6"
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 50,
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                    padding: '1.5rem',
+                }}
+                className="modal-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
             >
                 <motion.div
-                    className="glass-strong rounded-2xl p-8 w-full max-w-sm text-center relative overflow-hidden"
+                    className="glass-strong"
+                    style={{
+                        padding: '2rem', width: '100%', maxWidth: 380,
+                        textAlign: 'center', position: 'relative', overflow: 'hidden',
+                    }}
                     initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 80, opacity: 0 }}
                     transition={{ type: 'spring', damping: 26, stiffness: 300 }}
                 >
-                    {/* Decorative glow */}
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-indigo-600/20 blur-3xl pointer-events-none" />
+                    {/* Glow */}
+                    <div style={{
+                        position: 'absolute', top: -48, left: '50%', transform: 'translateX(-50%)',
+                        width: 160, height: 160, borderRadius: '50%',
+                        background: 'rgba(99,102,241,0.2)', filter: 'blur(40px)',
+                        pointerEvents: 'none',
+                    }} />
 
-                    <div className="text-5xl mb-4" role="img" aria-label="camera">📷</div>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📷</div>
 
-                    <h2 className="text-xl font-bold text-white mb-2">
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>
                         A gentle look at how you feel
                     </h2>
-                    <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                        We'll read only your <strong className="text-slate-300">facial expressions</strong>,
+                    <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+                        We'll read only your <strong style={{ color: '#cbd5e1' }}>facial expressions</strong>,
                         never record or store any video. All processing happens{' '}
-                        <strong className="text-slate-300">only on your device</strong>.
+                        <strong style={{ color: '#cbd5e1' }}>only on your device</strong>.
                     </p>
 
-                    <div className="flex flex-col gap-3">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <motion.button
                             onClick={onAccept}
-                            className="w-full py-4 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-base shadow-lg shadow-indigo-500/30"
+                            style={{
+                                width: '100%', padding: '1rem', borderRadius: 9999,
+                                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                                color: 'white', fontWeight: 600, fontSize: '1rem',
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: '0 8px 30px rgba(99,102,241,0.35)',
+                            }}
                             whileTap={{ scale: 0.97 }}
                         >
                             Enable — let's begin ✨
                         </motion.button>
                         <motion.button
                             onClick={onDecline}
-                            className="w-full py-3 rounded-full glass text-slate-400 text-sm font-medium"
+                            className="glass"
+                            style={{
+                                width: '100%', padding: '0.75rem',
+                                color: '#94a3b8', fontSize: '0.875rem', fontWeight: 500,
+                                border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer',
+                            }}
                             whileTap={{ scale: 0.97 }}
                         >
                             Continue without camera
                         </motion.button>
                     </div>
 
-                    <p className="text-slate-600 text-xs mt-4">
+                    <p style={{ color: '#475569', fontSize: '0.7rem', marginTop: '1rem' }}>
                         You can turn off camera access anytime from the settings menu.
                     </p>
                 </motion.div>
