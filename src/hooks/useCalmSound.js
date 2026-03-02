@@ -1,120 +1,164 @@
 /**
- * useCalmSound.js
- * Generative ambient soundscape using the Web Audio API.
- * No external assets needed — all audio is procedurally generated.
+ * useCalmSound.js — IMPROVED
+ * Richer generative soundscapes using Web Audio API.
+ * Includes binaural-like tones to encourage calm brainwave states.
  */
 import { useRef, useEffect, useCallback } from 'react';
 
 export function useCalmSound() {
     const ctxRef = useRef(null);
+    const masterGainRef = useRef(null);
     const nodesRef = useRef([]);
     const activeRef = useRef(false);
+    const currentStateRef = useRef(null);
 
     const getCtx = () => {
         if (!ctxRef.current) {
             ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            masterGainRef.current = ctxRef.current.createGain();
+            masterGainRef.current.gain.value = 0.0;
+            masterGainRef.current.connect(ctxRef.current.destination);
         }
         return ctxRef.current;
     };
 
-    const stopAll = useCallback(() => {
-        nodesRef.current.forEach(n => {
-            try { n.stop(); } catch (_) { }
-        });
-        nodesRef.current = [];
-        activeRef.current = false;
+    const stopAll = useCallback((fade = true) => {
+        if (!ctxRef.current || !masterGainRef.current) return;
+        if (fade) {
+            masterGainRef.current.gain.linearRampToValueAtTime(0, ctxRef.current.currentTime + 1.5);
+            setTimeout(() => {
+                nodesRef.current.forEach(n => { try { n.stop(); } catch (_) { } });
+                nodesRef.current = [];
+                activeRef.current = false;
+            }, 1600);
+        } else {
+            nodesRef.current.forEach(n => { try { n.stop(); } catch (_) { } });
+            nodesRef.current = [];
+            activeRef.current = false;
+        }
+        currentStateRef.current = null;
     }, []);
 
-    /** Create a sine oscillator with slow LFO tremolo */
-    const makeTremoloOsc = (ctx, freq, gain, lfoFreq = 0.08) => {
+    /** Sine oscillator with slow tremolo LFO */
+    const makeOsc = (ctx, dest, freq, gain, lfoFreq = 0.06, type = 'sine') => {
         const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
         const lfo = ctx.createOscillator();
         const lfoGain = ctx.createGain();
+        const gainNode = ctx.createGain();
 
-        osc.type = 'sine';
+        osc.type = type;
         osc.frequency.value = freq;
         lfo.type = 'sine';
         lfo.frequency.value = lfoFreq;
-        lfoGain.gain.value = gain * 0.4;
+        lfoGain.gain.value = gain * 0.3;
         gainNode.gain.value = gain;
 
         lfo.connect(lfoGain);
         lfoGain.connect(gainNode.gain);
         osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        gainNode.connect(dest);
 
-        osc.start();
-        lfo.start();
+        osc.start(); lfo.start();
         nodesRef.current.push(osc, lfo);
         return gainNode;
     };
 
-    /** Pink-ish noise via many oscillators (simple) */
-    const makeNoise = (ctx, volume = 0.015) => {
-        const bufferSize = ctx.sampleRate * 2;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
+    /** Pink noise for ocean/wind texture */
+    const makePinkNoise = (ctx, dest, volume) => {
+        const bufSize = ctx.sampleRate * 4;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const d = buf.getChannelData(0);
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-        for (let i = 0; i < bufferSize; i++) {
-            const white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-            b6 = white * 0.115926;
+        for (let i = 0; i < bufSize; i++) {
+            const w = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+            b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
+            b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+            d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
         }
         const src = ctx.createBufferSource();
-        src.buffer = buffer;
-        src.loop = true;
-        const gain = ctx.createGain();
-        gain.gain.value = volume;
-        src.connect(gain);
-        gain.connect(ctx.destination);
+        src.buffer = buf; src.loop = true;
+        const g = ctx.createGain(); g.gain.value = volume;
+        // Low pass filter for "ocean" character
+        const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 800;
+        src.connect(lpf); lpf.connect(g); g.connect(dest);
         src.start();
         nodesRef.current.push(src);
-        return gain;
+        return g;
     };
 
-    /** Play soundscape based on state */
+    /** Slow chord (stacked sine harmonics = pad sound) */
+    const makePad = (ctx, dest, rootFreq, gainVal) => {
+        const harmonics = [1, 1.5, 2, 2.67, 3];
+        harmonics.forEach(h => makeOsc(ctx, dest, rootFreq * h, gainVal / harmonics.length, 0.05 + Math.random() * 0.04));
+    };
+
     const play = useCallback((stressState) => {
-        stopAll();
+        if (stressState === currentStateRef.current) return; // no re-trigger if same state
+        currentStateRef.current = stressState;
+
+        const prev = nodesRef.current.slice();
         const ctx = getCtx();
+        const dest = masterGainRef.current;
+
         if (ctx.state === 'suspended') ctx.resume();
-        activeRef.current = true;
 
-        if (stressState === 'calm') {
-            // Soft wind chime tones + pink noise breath
-            makeTremoloOsc(ctx, 220, 0.04, 0.05);
-            makeTremoloOsc(ctx, 330, 0.025, 0.07);
-            makeTremoloOsc(ctx, 440, 0.015, 0.04);
-            makeNoise(ctx, 0.012);
-        } else if (stressState === 'mild') {
-            // Nature ambience: deeper resonant tones, waves
-            makeTremoloOsc(ctx, 174, 0.05, 0.06);
-            makeTremoloOsc(ctx, 261.6, 0.035, 0.09);
-            makeNoise(ctx, 0.02);
-        } else if (stressState === 'moderate') {
-            // Grounding rhythm — low binaural-like tone
-            makeTremoloOsc(ctx, 110, 0.06, 0.1);
-            makeTremoloOsc(ctx, 146.8, 0.04, 0.13);
-            makeNoise(ctx, 0.018);
-        } else {
-            // High stress — slow deep bass drone to entrain to slower breathing
-            makeTremoloOsc(ctx, 55, 0.08, 0.04);
-            makeTremoloOsc(ctx, 82.4, 0.05, 0.05);
-            makeNoise(ctx, 0.025);
+        // Fade out old sounds
+        if (prev.length > 0) {
+            masterGainRef.current.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+            setTimeout(() => { prev.forEach(n => { try { n.stop(); } catch (_) { } }); }, 900);
+            nodesRef.current = [];
         }
-    }, [stopAll]);
 
-    // Cleanup on unmount
+        // Small delay before new sounds start (crossfade gap)
+        setTimeout(() => {
+            if (currentStateRef.current !== stressState) return; // state changed again
+            activeRef.current = true;
+
+            if (stressState === 'calm') {
+                // 🌸 Crystal wind chimes + gentle ocean breath
+                // Tuned to 432Hz for natural resonance feel
+                makePad(ctx, dest, 108, 0.018);       // low warm pad
+                makeOsc(ctx, dest, 432, 0.012, 0.04); // root tone
+                makeOsc(ctx, dest, 540, 0.008, 0.06); // 5th
+                makeOsc(ctx, dest, 648, 0.005, 0.07); // octave
+                makePinkNoise(ctx, dest, 0.008);       // soft breath
+
+            } else if (stressState === 'mild') {
+                // 🌊 Warm nature ambience — grounding tones
+                makePad(ctx, dest, 174.6, 0.022);     // F3 — solfeggio "Ut" healing freq
+                makeOsc(ctx, dest, 261.6, 0.015, 0.08); // C4 middle
+                makeOsc(ctx, dest, 349.2, 0.01, 0.1);  // F4
+                makePinkNoise(ctx, dest, 0.014);
+
+            } else if (stressState === 'moderate') {
+                // 🌬️ Grounding rhythm — theta wave range (6Hz LFO) to entrain brain
+                makePad(ctx, dest, 136.1, 0.025);     // OM tone (spiritual grounding)
+                makeOsc(ctx, dest, 136.1, 0.018, 0.08, 'triangle');
+                makeOsc(ctx, dest, 204.15, 0.012, 0.1, 'sine'); // 3/2 harmony
+                makePinkNoise(ctx, dest, 0.018);
+
+            } else {
+                // ⚡ High stress — SLOW deep bass drone + alpha wave entrainment
+                // Deep drone guides breathing to slow down involuntarily
+                makePad(ctx, dest, 55, 0.03);         // very deep bass A1
+                makeOsc(ctx, dest, 82.4, 0.02, 0.04, 'triangle'); // E2
+                makeOsc(ctx, dest, 110, 0.015, 0.05, 'sine');     // A2
+                makePinkNoise(ctx, dest, 0.022);
+            }
+
+            // Fade in
+            masterGainRef.current.gain.cancelScheduledValues(ctx.currentTime);
+            masterGainRef.current.gain.setValueAtTime(0, ctx.currentTime);
+            masterGainRef.current.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 1.5);
+        }, prev.length > 0 ? 400 : 0);
+
+    }, []);
+
     useEffect(() => {
         return () => {
-            stopAll();
-            if (ctxRef.current) ctxRef.current.close();
+            stopAll(false);
+            if (ctxRef.current) { try { ctxRef.current.close(); } catch (_) { } }
         };
     }, [stopAll]);
 
